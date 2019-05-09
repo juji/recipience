@@ -1,6 +1,7 @@
 
 
-const Recipience = require('./index')
+const Recipience = require('../index')
+// const Recipience = require('./index')
 const recipience = new Recipience()
 
 console.log(recipience)
