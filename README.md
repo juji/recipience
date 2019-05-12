@@ -196,4 +196,4 @@ Consumer: ok.
 We can have separation of concerns.
 
 Cheers,
-[https://jujiyangasli.com](jujiyangasli.com)
+[jujiyangasli.com](https://jujiyangasli.com)
