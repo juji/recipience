@@ -52,10 +52,24 @@ const Recipience = function( opt ){
   this.stream = {
     _: _,
     _pipes: [],
+    __started: false,
     convert,
     async start(){
+
+      if(this.__started) return;
+      this.__started = true;
+
       if(!this._pipes.length)
         throw new Error('Error in starting Stream: No point to start without a pipe.')
+
+      // start other Receipience,
+      // only when a recipience pipes the data
+      // if not, the data will be cached on the recipience,
+      // and will be flushed at the appropriate time
+      for(var i=this._pipes.length-1;i>-1;i--){
+        if(this._pipes[i].stream._pipes.length)
+          this._pipes[i].stream.start()
+      }
 
       try{
         for await (const v in this)
@@ -80,6 +94,8 @@ const Recipience = function( opt ){
     [Symbol.asyncIterator]() {
       return {
         async next() {
+
+          _t.stream.__started = true;
 
           if(cache.length) return Promise.resolve({
             value: cache.shift(),
