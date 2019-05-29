@@ -39,17 +39,6 @@ try{
 }
 ```
 
-## Why?
-Borrowing jargons from *message-broker* systems, The word *Producer* and *Consumer* are being used here.
-
-- instead of **asking** for a function as a callback handler, the Producer **gives** the Consumer a `RecipienceStream`. To give a Consumer a stream, means giving freedom to handle the stream in anyway possible to the Consumer.
-
-- It is time to minimize writing callbacks. I personally think it was a hack on dealing with asynchronous incoming data stream. Consumer should not worry about callbacks. They should worry about data-stream. The stream will automatically finish or throw error.
-
-- Consumers can have a clear visual flow of the system, as they intended (try...catch...finally).
-
-- Separating concerns between Consumer and Producer.
-
 
 ## Usage and References
 ```js
@@ -81,7 +70,7 @@ someStream.on('data', recipience.pipe)
 connectToLogService(recipience.pipe)
 ```
 
-A pipe can be used anytime. A Consumer can have an async process before they decided to receive data from pipe. In that case, they will receive all data coming into the pipe, from the start. Example:
+A pipe can be used anytime. A Receiver can have an async process before they decided to receive data from pipe. In that case, they will receive all data coming into the pipe, from the start. Example:
 ```js
 const startReceiveData = async () => {
   for await (const data of recipience.stream)
@@ -105,10 +94,10 @@ someStream.write(1)
 */
 ```
 
-So, **incoming data are cached**. The cache will be empty when the consumer starts to listen to data.
+So, **incoming data are cached**. The cache will be flushed to the Stream when the Receiver starts receiving data.
 
 #### recipience.error
-A callback to handle error, we can use this if `pipe` is only receiving one parameter.
+A callback to handle error, we can use this if `pipe` is only using one argument.
 ```
 someStream.on('data', recipience.pipe)
 someStream.on('error', recipience.error)
