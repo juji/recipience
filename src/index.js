@@ -89,6 +89,7 @@ const Recipience = function( opt ){
         throw new Error('Error in piping Stream: The pipe needs to be a Recipience');
 
       this._pipes.push(recipience)
+      this.start();
       return recipience;
     },
     fork( recipience ){
@@ -96,6 +97,7 @@ const Recipience = function( opt ){
         throw new Error('Error in forking Stream: The fork needs to be a Recipience');
 
       this._pipes.push(recipience)
+      this.start();
       return this;
     },
     [Symbol.asyncIterator]() {

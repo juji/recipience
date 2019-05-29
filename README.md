@@ -202,6 +202,21 @@ original -+- fork1
 */
 ```
 
+##### Does this affect caching?
+YES, glad you asked. Each recipience in the plumbing will hold it's own cache as long as receiver does not listen.
+So be careful on the receiving end.
+
+
+Each pipe, however, will only hold cache on the ond of the pipe.
+
+
+#### recipience.stream.start
+If you decided to pipe, or fork, It will start automatically.
+Calling this function is not needed in most cases.
+```
+recipience.stream.pipe( new Recipience() )
+// will auto start
+```
 
 #### recipience.stream.convert
 A `RecipienceStream` can convert it's data.
