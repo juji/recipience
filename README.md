@@ -160,6 +160,70 @@ try{
 console.log('do things after done or error')
 ```
 
+#### recipience.stream.pipe
+A `RecipienceStream` can be forked, and piped.
+```js
+
+recipience.stream.pipe(new Recipience())
+recipience.stream.fork(new Recipience())
+
+```
+
+##### The difference:
+`stream.fork` and `stream.pipe` **are both chainable**.
+
+- `stream.pipe` returns the next RecipienceStream
+- `stream.fork` returns the orginal RecipienceStream
+
+Example:
+```
+const original = new Recipience()
+
+const pipe1 = new Recipience()
+const pipe2 = new Recipience()
+
+const fork1 = new Recipience()
+const fork2 = new Recipience()
+
+const result = original.stream
+  .fork(fork1)
+  .fork(fork2)
+  .pipe(pipe1)
+  .pipe(pipe2)
+
+// result
+/*
+
+original -+- fork1
+          |
+          +- fork2
+          |
+          +- pipe1 - pipe2
+*/
+```
+
+
+#### recipience.stream.convert
+A `RecipienceStream` can convert it's data.
+```js
+
+recipience.stream.convert = function( data ){
+  return data + 1;
+}
+
+// another way to convert data
+// is at construction time
+const recipience = new Recipience({
+  convert: data => data +1
+})
+
+// combining with pipe
+recipience.stream.pipe( new Recipience({
+  convert: async ( data ) => await Promise.resolve( data + 2 )
+}))
+
+```
+
 #### recipience.isDone
 a `Function`
 ```
@@ -172,13 +236,13 @@ Will return a boolean, that indicates wether a Recipience is marked as `done` or
 ## What changes?
 Before:
 ```
-Producer: i have incoming data, please provide a function to take care of this data.
+Producer: i have data for you, please provide a function to take care of this data.
 Consumer: here you go.
 ```
 
 After:
 ```
-Producer: i have incoming data, Here you go.
+Producer: i have data for you, Here, this is the Recipience.
 Consumer: ok.
 ```
 
