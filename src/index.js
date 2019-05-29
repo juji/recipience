@@ -19,6 +19,7 @@ const Recipience = function( opt ){
 
     const err = arguments.length === 2 ? arguments[0] : null
     const payload = arguments.length === 1 ? arguments[0] : arguments[1]
+    if(payload instanceof Error) err = payload;
 
     if(err) _t.error(err)
     else resolver ? resolver({
@@ -77,7 +78,7 @@ const Recipience = function( opt ){
             this._pipes[i].pipe(null,v)
       }catch(e){
         for(var i=0;i<=this._pipes.length;i++)
-          this._pipes[i].pipe(e)
+          this._pipes[i].pipe(e, null)
       }
 
       for(var i=0;i<=this._pipes.length;i++)
@@ -90,7 +91,7 @@ const Recipience = function( opt ){
 
       this._pipes.push(recipience)
       this.start();
-      return recipience;
+      return recipience.stream;
     },
     fork( recipience ){
       if(recipience.constructor !== Recipience)

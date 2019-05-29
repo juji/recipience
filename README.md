@@ -60,6 +60,26 @@ The pipe, takes either one or two arguments:
 recipience.pipe [Function( data )]
 recipience.pipe [Function( err, data )]
 ```
+if the first arguments is an instance of `Error`, it will be regarded as Error, regardles of the number of arguments:
+```js
+// implementation under the hood:
+if(data instanceof Error) err = data;
+```
+
+if you throw an error using custom object, please extend `Error` object:
+```
+const MyCustomError = function(str){
+  Error.apply(this,arguments)
+  this.myCustomVar = str + 'custom'
+}
+MyCustomError.prototype = Error.prototype
+MyCustomError.constructor = MyCustomError
+```
+or,
+```
+class MyCustomError extends Error {}
+```
+
 
 It is to be used as a callback for the original event-based `.on()` call. For example:
 ```js
