@@ -160,7 +160,7 @@ try{
 console.log('do things after done or error')
 ```
 
-#### recipience.stream.pipe
+#### recipience.stream.pipe & recipience.stream.fork
 A `RecipienceStream` can be forked, and piped.
 ```js
 
