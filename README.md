@@ -70,18 +70,22 @@ if you throw an error using custom object, please extend `Error` object:
 ```
 const MyCustomError = function(str){
   Error.apply(this,arguments)
-  this.myCustomVar = str + 'custom'
+  this.myCustomMethod = () => str + 'custom'
 }
 MyCustomError.prototype = Error.prototype
 MyCustomError.constructor = MyCustomError
 ```
 or,
 ```
-class MyCustomError extends Error {}
+class MyCustomError extends Error {
+  myCustomMethod(){
+    return str + 'custom'
+  }
+}
 ```
 
 
-It is to be used as a callback for the original event-based `.on()` call. For example:
+The pipe, is to be used as a callback for the original event-based `.on()` call. For example:
 ```js
 // someStream.on('data', data => recipience.pipe(data))
 someStream.on('data', recipience.pipe)
