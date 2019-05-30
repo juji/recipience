@@ -1,10 +1,11 @@
 
 
-const Recipience = require('./index')
-// const Recipience = require('./index')
+
+console.log(`using ${process.argv[2] || './index'}`);
+const Recipience = require(process.argv[2] || './index')
 const recipience = new Recipience()
 
-console.log(recipience)
+// console.log(recipience)
 
 // we have a stream of data
 const someStream = {

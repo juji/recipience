@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "build": "babel ./src/index.js --out-file ./index.js",
-    "test": "node src/_test.js"
+    "test": "node src/_test.js",
+    "testbuild": "node src/_test.js ../index.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
