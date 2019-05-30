@@ -292,9 +292,9 @@ YES, glad you asked.
 Each recipience in a fork will hold it's own cache as long as receiver does not listen.
 So be careful on the receiving end.
 
-Each pipe, however, will only hold cache on the ond of the pipe.
+Each pipe, however, will only hold cache on the end of the pipe.
 
-So, in the example, cache will be hold on `fork1`, `fork2`, and `pipe2`.
+So, in the example, cache will be held in `fork1`, `fork2`, and `pipe2`.
 
 ##### Note on fork and pipe
 You should NOT listen to data events on the original stream if you decided to fork or pipe. Listening to data event on the original stream will redirect data flow to YOUR function, instead of the plumbing.
