@@ -28,17 +28,67 @@ const recipience = new Recipience()
 someStream.on('data', recipience.pipe)
 someStream.on('error', recipience.error)
 someStream.on('finish', recipience.done)
+```
+after that, we can do lots of stuff...
 
+#### We can listen to the stream
+```js
 try{
-  for await (const data of recipience.stream)
-    doStuff( data )
-
-  closeApp()
+    for await (const data of recipience.stream)
+        doStuff( data )
 }catch(e){
-  propagateError( e )
+    propagateError( err )
 }
+closeApp()
+```
+or,
+```js
+const listen = () => {
+    recipience.stream.next()
+    .then(data => {
+        doStuff( data )
+        listen();
+    ))
+    .catch(propagateError)
+}
+listen();
+```
+or,
+```js
+await recipience.stream.each(doStuff).catch(propagateError);
+closeApp();
 ```
 
+#### We can fork the stream
+```js
+recipience.stream
+  .fork( new Recipience() )
+  .fork( new Recipience() )
+  .fork( new Recipience() )
+
+/*
+            +- fork1
+            |
+recipience -+- fork2
+            |
+            +- fork3
+*/
+```
+
+#### We can pipe the stream
+```js
+recipience.stream
+  .pipe( new Recipience() )
+  .pipe( new Recipience() )
+  .pipe( new Recipience() )
+
+/*
+recipience -+- pipe1 -+- pipe2 -+- pipe3
+*/
+```
+
+#### We can also, convert data in the stream
+Read on, my friend...
 
 ## Usage and References
 ```js
@@ -60,11 +110,13 @@ const recipience = new Recipience({
   convert: async ( data ) => data + ' converted';
 })
 ```
-Please remember that using an async function as `convert` will mess data order in stream.
+Please remember that using an async function as `convert` can mess with data ordering in stream.
 
 
-#### Intances
-
+### The Instance
+```js
+const recipience = new Recipience( option )
+```
 A Recipience instance, have the following properties:
 #### recipience.pipe
 A pipe, like the name implies, is where the stream flows. Technically, it's a `Function`.
@@ -80,26 +132,10 @@ if the first arguments is an instance of `Error`, it will be regarded as Error, 
 if(data instanceof Error) err = data;
 ```
 
-if you throw an error using custom object, please extend `Error` object:
-```
-const MyCustomError = function(str){
-  Error.apply(this,arguments)
-  this.myCustomMethod = () => str + 'custom'
-}
-MyCustomError.prototype = Error.prototype
-MyCustomError.constructor = MyCustomError
-```
-or,
-```
-class MyCustomError extends Error {
-  myCustomMethod(){
-    return str + 'custom'
-  }
-}
-```
+if you throw an error using custom object, please [extend `Error` object](https://javascript.info/custom-errors). So it can be detected as error.
 
 
-The pipe, is to be used as a callback for the original event-based `.on()` call. For example:
+The __pipe__, is to be used as a callback for the original event-based `.on()` call. For example:
 ```js
 // someStream.on('data', data => recipience.pipe(data))
 someStream.on('data', recipience.pipe)
@@ -110,17 +146,17 @@ connectToLogService(recipience.pipe)
 
 A pipe can be used anytime. A Receiver can have an async process before they decided to receive data from pipe. In that case, they will receive all data coming into the pipe, from the start. Example:
 ```js
-const startReceiveData = async () => {
-  for await (const data of recipience.stream)
-    console.log( data )
-}
 
 someStream.on('data', recipience.pipe)
+
+// write data first
 someStream.write(-2)
 someStream.write(-1)
 
-startReceiveData()
+// start receiving data
+recipience.stream.each(console.log)
 
+// write data after listen
 someStream.write(0)
 someStream.write(1)
 
@@ -146,7 +182,7 @@ someStream.on('error', recipience.error)
 recipience.error [Function(err)]
 ```
 
-An `error` means the end of the stream. If an error happens, the stream is marked as `done`. No data will come out from the stream after error happens. In effect, the consumer system will follow the `catch` flow, and continues.
+An `error` means the end of the stream. If an error happens, the stream is marked as `done`. No data will come out from the stream after error happens. In effect, the Receiver system will follow the `catch` flow, and continues.
 
 #### recipience.done
 As in `recipience.error`:
@@ -161,9 +197,9 @@ someStream.on('finish', recipience.done)
 recipience.done [Function()]
 ```
 
-If a stream is marked as done, it will not produce any data. All data coming to the pipe after `done`, is discarded. The Consumer will stop iterating and the flow will continue.
+If a stream is marked as done, it will not produce any data. All data coming to the pipe after `done`, is discarded. The Receiver will stop iterating and the flow will continue.
 
-Producer can also use this to their preference, calling whenever it is needed. Example:
+A usage example:
 ```js
 // notice, we don't need to call recipience.error
 connectToLogService((err, data) => {
@@ -173,27 +209,32 @@ connectToLogService((err, data) => {
 ```
 
 #### recipience.stream
-This is the object we can give to the consumer. Consumer can **iterate** incoming data:
+This is where the data lives. Receiver can **iterate** incoming data:
 ```js
 for await (const data of recipience.stream)
     console.log( data )
 ```
 
+or, simply:
+```js
+await recipience.stream.each(console.log)
+```
+
 Another example with control flow:
 ```js
 try{
-
   for await (const data of recipience.stream)
     console.log( data )
-
-  console.log('The stream is DONE')
-
 }catch(e){
-
-  console.log('The stream has error')
   console.error(e)
-
 }
+
+console.log('do things after done or error')
+```
+...
+```js
+await recipience.stream.each(console.log)
+ .catch(console.error)
 
 console.log('do things after done or error')
 ```
@@ -201,11 +242,16 @@ console.log('do things after done or error')
 #### recipience.stream.pipe & recipience.stream.fork
 A `RecipienceStream` can be forked, and piped.
 ```js
-
-recipience.stream.pipe(new Recipience())
-recipience.stream.fork(new Recipience())
-
+recipience.stream.pipe( Recipience [, option ] )
+recipience.stream.fork( Recipience [, option ] )
 ```
+##### Option
+
+- __start__ to configure autostart. Default value is `true`
+   ```
+   { start: true }
+   ```
+   By default, a stream will start listening to data event when it is piped or forked.
 
 ##### The difference:
 `stream.fork` and `stream.pipe` **are both chainable**.
@@ -241,40 +287,38 @@ original -+- fork1
 ```
 
 ##### Does this affect caching?
-YES, glad you asked. Each recipience in the plumbing will hold it's own cache as long as receiver does not listen.
+YES, glad you asked.
+
+Each recipience in a fork will hold it's own cache as long as receiver does not listen.
 So be careful on the receiving end.
 
-
 Each pipe, however, will only hold cache on the ond of the pipe.
+
+So, in the example, cache will be hold on `fork1`, `fork2`, and `pipe2`.
+
+##### Note on fork and pipe
+You should NOT listen to data events on the original stream if you decided to fork or pipe. Listening to data event on the original stream will redirect data flow to YOUR function, instead of the plumbing.
+
+If you need to debug your data, fork one instead.
 
 
 #### recipience.stream.start
 If you decided to pipe, or fork, It will start automatically.
-Calling this function is not needed in most cases.
 ```
 recipience.stream.pipe( new Recipience() )
 // will auto start
 ```
 
-#### recipience.stream.convert
-A `RecipienceStream` can convert it's data.
-```js
+You can stop autostart from happening by setting `option` on fork and pipe.
+```
+recipience.stream.pipe( new Recipience(), { start: false } )
+recipience.stream.fork( new Recipience(), { start: false } )
 
-recipience.stream.convert = function( data ){
-  return data + 1;
-}
+//do something...
+await doSomething()
 
-// another way to convert data
-// is at construction time
-const recipience = new Recipience({
-  convert: data => data +1
-})
-
-// combining with pipe
-recipience.stream.pipe( new Recipience({
-  convert: async ( data ) => await Promise.resolve( data + 2 )
-}))
-
+// start the sream
+recipience.stream.start()
 ```
 
 #### recipience.isDone
@@ -295,7 +339,7 @@ Consumer: here you go.
 
 After:
 ```
-Producer: i have data for you, Here, this is the Recipience.
+Producer: i have data for you. Here, this is the Recipience.
 Consumer: ok.
 ```
 
