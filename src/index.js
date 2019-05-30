@@ -1,5 +1,5 @@
+require("@babel/polyfill");
 
-const _ = this;
 const Recipience = function( opt ){
 
   let done = false
@@ -7,25 +7,30 @@ const Recipience = function( opt ){
   let resolver = null
   let rejector = null
   const cache = []
-  const convert = (opt && opt.convert) || async function(v){ return v };
   const _t = this;
+
+  this.convert = (opt && opt.convert) || async function(v){ return v };
 
   this.pipe = async function(){
 
-    this._super = _t;
-    this._ = _;
-
     if(done) return;
+
+    // if(_t.convert.constructor.name === "AsyncFunction"){
+    //   _t.error(new Error('Convert function should not be an async function'))
+    // }
 
     const err = arguments.length === 2 ? arguments[0] : null
     const payload = arguments.length === 1 ? arguments[0] : arguments[1]
     if(payload instanceof Error) err = payload;
 
     if(err) _t.error(err)
-    else resolver ? resolver({
-      value: await _t.stream.convert(payload),
-      done: false
-    }) : cache.push(await _t.stream.convert(payload));
+    else {
+      const data = await _t.convert(payload);
+      resolver ? resolver({
+        value: data,
+        done: false
+      }) : cache.push(data);
+    }
 
     resolver = rejector = null
 
@@ -51,10 +56,8 @@ const Recipience = function( opt ){
   }
 
   this.stream = {
-    _: _,
     _pipes: [],
     __started: false,
-    convert,
     async start(){
 
       if(this.__started) return;
@@ -67,59 +70,102 @@ const Recipience = function( opt ){
       // only when a recipience pipes the data
       // if not, the data will be cached on the recipience,
       // and will be flushed at the appropriate time
-      for(var i=this._pipes.length-1;i>-1;i--){
+      for(var i=0;i<this._pipes.length;i++){
         if(this._pipes[i].stream._pipes.length)
           this._pipes[i].stream.start()
       }
 
-      try{
-        for await (const v in this)
-          for(var i=0;i<=this._pipes.length;i++)
-            this._pipes[i].pipe(null,v)
-      }catch(e){
-        for(var i=0;i<=this._pipes.length;i++)
-          this._pipes[i].pipe(e, null)
+      const _callback = (data) => {
+        for(var i=0;i<this._pipes.length;i++)
+          this._pipes[i].pipe(data)
       }
 
-      for(var i=0;i<=this._pipes.length;i++)
+      const _errorCallback = e => {
+        for(var i=0;i<this._pipes.length;i++)
+          this._pipes[i].error(e)
+      }
+
+      await this.each(_callback).catch(_errorCallback)
+
+      for(var i=0;i<this._pipes.length;i++)
         this._pipes[i].done()
 
     },
-    pipe( recipience ){
+    pipe( recipience, opt ){
       if(recipience.constructor !== Recipience)
         throw new Error('Error in piping Stream: The pipe needs to be a Recipience');
 
+      opt = {
+        start: true,
+        ...(opt||{})
+      };
+
       this._pipes.push(recipience)
-      this.start();
+      opt.start && this.start();
       return recipience.stream;
     },
-    fork( recipience ){
+    fork( recipience, opt ){
       if(recipience.constructor !== Recipience)
         throw new Error('Error in forking Stream: The fork needs to be a Recipience');
 
+      opt = {
+        start: true,
+        ...(opt||{})
+      };
+
       this._pipes.push(recipience)
-      this.start();
+      opt.start && this.start();
       return this;
+    },
+    each(fn){
+      return this.next()
+      .then(v => {
+        if(!v.done) {
+          fn(v.value);
+          return this.each(fn)
+        }else{
+          return v;
+        }
+      })
+      .catch(e => Promise.reject(e))
+    },
+    next() {
+
+      this.__started = true;
+
+      if(cache.length) return Promise.resolve({
+        value: cache.shift(),
+        done: false
+      })
+      if(error) return Promise.reject(error)
+      if(done) return Promise.resolve({ done: true })
+
+      return new Promise((r,j) => {
+        resolver = r;
+        rejector = j;
+      })
+
     },
     [Symbol.asyncIterator]() {
       return {
-        async next() {
-
-          _t.stream.__started = true;
-
-          if(cache.length) return Promise.resolve({
-            value: cache.shift(),
-            done: false
-          })
-          if(error) return Promise.reject(error)
-          if(done) return Promise.resolve({ done: true })
-
-          return new Promise((r,j) => {
-            resolver = r;
-            rejector = j;
-          })
-
-        }
+        next: _t.stream.next
+        // async next() {
+        //
+        //   _t.stream.__started = true;
+        //
+        //   if(cache.length) return Promise.resolve({
+        //     value: cache.shift(),
+        //     done: false
+        //   })
+        //   if(error) return Promise.reject(error)
+        //   if(done) return Promise.resolve({ done: true })
+        //
+        //   return new Promise((r,j) => {
+        //     resolver = r;
+        //     rejector = j;
+        //   })
+        //
+        // }
       }
     }
   }

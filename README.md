@@ -48,8 +48,22 @@ const Recipience = require('recipience')
 
 ### Initialize
 ```js
-const recipience = new Recipience()
+const recipience = new Recipience( options )
 ```
+
+#### Options
+
+##### options.convert
+You can convert data by defining convert function. Async function is supported.
+```
+const recipience = new Recipience({
+  convert: async ( data ) => data + ' converted';
+})
+```
+Please remember that using an async function as `convert` will mess data order in stream.
+
+
+#### Intances
 
 A Recipience instance, have the following properties:
 #### recipience.pipe

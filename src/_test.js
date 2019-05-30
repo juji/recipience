@@ -1,6 +1,6 @@
 
 
-const Recipience = require('../index')
+const Recipience = require('./index')
 // const Recipience = require('./index')
 const recipience = new Recipience()
 
@@ -42,28 +42,54 @@ const writeData = () => setTimeout(() => {
 }, 50)
 
 
+// fork and pipe
+
+const fork1 = new Recipience({
+  convert: (d) => `fork1 ${d}`
+})
+
+const fork2 = new Recipience({
+  convert: (d) => `fork2 ${d}`
+})
+
+const pipe1 = new Recipience({
+  convert: (d) => `pipe1 ${d}`
+})
+
+const pipe2 = new Recipience({
+  convert: (d) => `pipe2 ${d}`
+})
+
+recipience.stream
+  .fork(fork1)
+  .fork(fork2)
+  .pipe(pipe1)
+  .pipe(pipe2)
+;
+
 writeData()
 
 // start listening to incoming data
-;(async () => {
+const listen = async ( recip ) => {
 
-  try{
-
-    const then = new Date()
-    for await (const data of recipience.stream)
-      console.log('data', data, 'time', new Date() - then)
-
-    console.log('DONE called?', recipience.isDone())
-
-  }catch(e){
-
+  const then = new Date()
+  await recip.stream.each(data => {
+    console.log('data', data, 'time', new Date() - then)
+  }).catch(e => {
     console.log('ERROR CAPTURED:')
     console.error(e)
+  })
 
-    console.log('Is it DONE?', recipience.isDone())
-
-  }
-
+  console.log('Is it DONE?', recip.isDone())
   console.log('ERROR, or DONE have been called')
 
-})()
+};
+
+
+
+
+// start listens
+// listen(recipience)
+listen(fork1)
+listen(fork2)
+listen(pipe2)
