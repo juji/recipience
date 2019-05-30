@@ -1,8 +1,8 @@
 # Recipience
 
-![Recipience](https://i.imgur.com/BH5uij0.png)
+The receiving-end of a data-stream system.
 
-Recipience, minimize the need to write callbacks on the receiving-end of a data-stream system.
+![Recipience](https://i.imgur.com/BH5uij0.png)
 
 It converts a callback-based workflow into an [AsyncIterator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator) workflow.
 
