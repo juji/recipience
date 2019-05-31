@@ -5,3 +5,14 @@ git add -A
 git commit -am "$1"
 
 git push origin dev
+
+pushtomaster(){
+  echo 'pushtomaster'
+  # git checkout master
+  # git merge dev
+  # git push origin master
+  # git checkout dev
+}
+
+
+[[ $2 ]] && pushtomaster
