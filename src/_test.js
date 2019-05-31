@@ -71,22 +71,52 @@ recipience.stream
 writeData()
 
 // start listening to incoming data
+let TestThis = () => { console.log('Fake function called') };
 const listen = async ( recip ) => {
 
   const then = new Date()
-  await recip.stream.each(data => {
-    console.log('data', data, 'time', new Date() - then)
-  }).catch(e => {
-    console.log('ERROR CAPTURED:')
-    console.error(e)
+  const Test = new Recipience({
+    convert: data => ({
+      payload: data,
+      time: new Date() - then
+    })
+  })
+  const Screen = new Recipience({
+    convert: data => [
+      'data', data,
+      'time', new Date() - then
+    ].join(' ')
   })
 
-  console.log('Is it DONE?', recip.isDone())
-  console.log('ERROR, or DONE have been called')
+  // send them to test
+  await recip.stream
+    .fork(Test)
+    .fork(Screen)
+
+  await Promise.all([
+    Screen.stream.each(console.log),
+    Test.stream.each(TestThis()),
+  ]).catch(e => {
+    console.error('Recipience ERROR')
+    console.error('This should not happen. Something needs to be fixed.')
+    throw e
+  })
+
+  // done
+  console.log('DONE', recip.isDone())
+  console.log('OK ERROR or DONE have been called')
 
 };
 
+TestThis = () => {
 
+  const negativeTrends = 0;
+  const checkTimeSlope = () => {}
+  return (data) => {
+
+  }
+
+}
 
 
 // start listens

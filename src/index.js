@@ -9,7 +9,11 @@ const Recipience = function( opt ){
   const cache = []
   const _t = this;
 
-  this.convert = (opt && opt.convert) || async function(v){ return v };
+  const STATE = { pipeOrForked: false };
+
+  this.convert = (
+    opt && opt.convert && opt.convert.constructor === Function && opt.convert
+  ) || null;
 
   this.pipe = async function(){
 
@@ -19,13 +23,13 @@ const Recipience = function( opt ){
     //   _t.error(new Error('Convert function should not be an async function'))
     // }
 
-    const err = arguments.length === 2 ? arguments[0] : null
-    const payload = arguments.length === 1 ? arguments[0] : arguments[1]
+    const err = arguments.length === 2 ? arguments[0] : null;
+    const payload = arguments.length === 1 ? arguments[0] : arguments[1];
     if(payload instanceof Error) err = payload;
 
-    if(err) _t.error(err)
+    if(err) _t.error(err);
     else {
-      const data = await _t.convert(payload);
+      const data = _t.convert ? await _t.convert(payload) : payload;
       resolver ? resolver({
         value: data,
         done: false
@@ -63,6 +67,8 @@ const Recipience = function( opt ){
       if(this.__started) return;
       this.__started = true;
 
+      STATE.pipeOrForked = true;
+
       if(!this._pipes.length)
         throw new Error('Error in starting Stream: No point to start without a pipe.')
 
@@ -85,8 +91,20 @@ const Recipience = function( opt ){
           this._pipes[i].error(e)
       }
 
-      await this.each(_callback).catch(_errorCallback)
+      const _run = async () => {
+        await this.next(STATE)
+        .then(v => {
+          if(!v.done) {
+            _callback(v.value);
+            return _run()
+          }else{
+            return v;
+          }
+        })
+        .catch(_errorCallback)
+      }
 
+      await _run();
       for(var i=0;i<this._pipes.length;i++)
         this._pipes[i].done()
 
@@ -130,6 +148,13 @@ const Recipience = function( opt ){
       .catch(e => Promise.reject(e))
     },
     next() {
+
+      if(
+        (STATE.pipeOrForked && !arguments[0]) ||
+        (STATE.pipeOrForked && arguments[0] !== STATE)
+      ) throw new Error('Recipience is already forked or piped')
+
+      if(arguments[0] && arguments[0].isClosed && arguments[0].isClosed === 'p|f')
 
       this.__started = true;
 
