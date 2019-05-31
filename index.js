@@ -38,7 +38,7 @@ var createCustomError = function createCustomError(props) {
     function (_Error) {
       _inherits(RecipienceError, _Error);
 
-      function RecipienceError(message) {
+      function RecipienceError(message, meta) {
         var _this;
 
         _classCallCheck(this, RecipienceError);
@@ -47,6 +47,7 @@ var createCustomError = function createCustomError(props) {
         _this.constructor = RecipienceError;
         _this.__proto__ = RecipienceError.prototype;
         _this.message = message;
+        _this.meta = meta;
 
         for (var i in props) {
           i === 'constructor' && i === '__proto__' && i === 'message' || (_this[i] = props[i]);
@@ -203,7 +204,7 @@ var Recipience = function Recipience(opt) {
                   break;
                 }
 
-                throw new Error('Error in starting Stream: No point to start without a pipe.');
+                throw new RecipienceError('Error in starting Stream: No point to start without a pipe.', _t.meta);
 
               case 6:
                 // start other Receipience,
@@ -283,7 +284,7 @@ var Recipience = function Recipience(opt) {
       return start;
     }(),
     pipe: function pipe(recipience, opt) {
-      if (recipience.constructor !== Recipience) throw new Error('Error in piping Stream: The pipe needs to be a Recipience');
+      if (recipience.constructor !== Recipience) throw new RecipienceError('Error in piping Stream: The fork needs to be a Recipience', _t.meta);
       opt = _objectSpread({
         start: true
       }, opt || {});
@@ -294,7 +295,7 @@ var Recipience = function Recipience(opt) {
       return recipience.stream;
     },
     fork: function fork(recipience, opt) {
-      if (recipience.constructor !== Recipience) throw new Error('Error in forking Stream: The fork needs to be a Recipience');
+      if (recipience.constructor !== Recipience) throw new RecipienceError('Error in forking Stream: The fork needs to be a Recipience', _t.meta);
       opt = _objectSpread({
         start: true
       }, opt || {});
@@ -328,7 +329,7 @@ var Recipience = function Recipience(opt) {
       //   (STATE.pipeOrForked && !arguments[0]) ||
       //   (STATE.pipeOrForked && arguments[0] !== STATE)
       // )});
-      if (STATE.pipeOrForked && !arguments[0] || STATE.pipeOrForked && arguments[0] !== STATE) return Promise.reject(new RecipienceError('I can\'t redirect flow from the plumbing')); // console.log('next', _t.meta)
+      if (STATE.pipeOrForked && !arguments[0] || STATE.pipeOrForked && arguments[0] !== STATE) return Promise.reject(new RecipienceError('Cannot redirect flow from the plumbing, Create a fork instead.', _t.meta)); // console.log('next', _t.meta)
 
       if (arguments[0] && arguments[0].isClosed && arguments[0].isClosed === 'p|f') this.__started = true;
       if (cache.length) return Promise.resolve({
