@@ -16,4 +16,4 @@ pushtomaster(){
   echo '>>>>> PUSHING TO MASTER |'
 }
 
-[[ "$2" == "m" ]] && pushtomaster
+[[ "$2" ]] && [[ "$2" == "m" ]] && pushtomaster
