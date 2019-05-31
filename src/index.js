@@ -1,11 +1,13 @@
 require("@babel/polyfill");
 
 const createCustomError = (props) => class RecipienceError extends Error {
-   constructor (message) {
+   constructor (message, meta) {
       super (message)
       this.constructor = RecipienceError
       this.__proto__   = RecipienceError.prototype
       this.message     = message
+
+      this.meta = meta;
 
       for(var i in props){
         (
@@ -26,7 +28,8 @@ const createCustomError = (props) => class RecipienceError extends Error {
 
 const RecipienceError = createCustomError({
   name: 'RecipienceError'
-})
+});
+
 const Recipience = function( opt ){
 
   let done = false
@@ -101,7 +104,10 @@ const Recipience = function( opt ){
       STATE.pipeOrForked = true;
 
       if(!this._pipes.length)
-        throw new Error('Error in starting Stream: No point to start without a pipe.')
+        throw new RecipienceError(
+          'Error in starting Stream: No point to start without a pipe.',
+          _t.meta
+        )
 
       // start other Receipience,
       // only when a recipience pipes the data
@@ -142,7 +148,10 @@ const Recipience = function( opt ){
     },
     pipe( recipience, opt ){
       if(recipience.constructor !== Recipience)
-        throw new Error('Error in piping Stream: The pipe needs to be a Recipience');
+        throw new RecipienceError(
+          'Error in piping Stream: The fork needs to be a Recipience',
+          _t.meta
+        )
 
       opt = {
         start: true,
@@ -155,7 +164,10 @@ const Recipience = function( opt ){
     },
     fork( recipience, opt ){
       if(recipience.constructor !== Recipience)
-        throw new Error('Error in forking Stream: The fork needs to be a Recipience');
+        throw new RecipienceError(
+          'Error in forking Stream: The fork needs to be a Recipience',
+          _t.meta
+        )
 
       opt = {
         start: true,
@@ -194,7 +206,12 @@ const Recipience = function( opt ){
       if(
         (STATE.pipeOrForked && !arguments[0]) ||
         (STATE.pipeOrForked && arguments[0] !== STATE)
-      ) return Promise.reject(new RecipienceError('I can\'t redirect flow from the plumbing'))
+      ) return Promise.reject(
+        new RecipienceError(
+          'Cannot redirect flow from the plumbing, Create a fork instead.',
+          _t.meta
+        )
+      )
 
       // console.log('next', _t.meta)
 

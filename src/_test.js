@@ -62,7 +62,7 @@ const pipe1 = new Recipience({
 
 const pipe2 = new Recipience({
   meta: 'pipe2',
-  convert: (d) => `pipe2 ${d}`
+  convert: function(d){ return `${this.meta} ${d}` }
 })
 
 recipience.stream
@@ -127,21 +127,9 @@ TestThis = (recipient) => {
 
 
 // redirecting stream on a plumbing should throw error
-recipience.stream.each(console.log).catch(console.error)
-
-// redirecting stream on a plumbing should throw error
-// but flow should still go to the plumbing
-;(async () => {
-  await recipience.stream.each(console.log)
-/* -> toggle comment
-  .catch(e => {
-    console.log({'e.constructor === Recipience.RecipienceError': e.constructor === Recipience.RecipienceError})
-    console.log({'e instanceof Error': e instanceof Error})
-  })
-/*/
-  console.error('THIS SHOULD NOT RUN. something needs to be fixed.', r.isDone())
-/**/
-})()
+// but the flow continues
+recipience.stream.each(console.log)
+  .catch(console.error)
 
 // start listens
 listen(fork1)

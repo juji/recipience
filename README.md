@@ -105,12 +105,37 @@ const recipience = new Recipience( options )
 
 ##### options.convert
 You can convert data by defining convert function. Async function is supported.
-```
+```js
 const recipience = new Recipience({
   convert: async ( data ) => data + ' converted';
 })
 ```
 Please remember that using an async function as `convert` can mess with data ordering in stream.
+
+##### options.meta
+You can add your own stuff to Recipience.
+```js
+const toColdStorage = new Recipience({
+  meta: {
+    name: 'toColdStorage',
+    group: 'db',
+  }
+})
+
+console.log(recipience.meta.name)
+// recipience1
+```
+
+you can use __meta__ in `convert`:
+```js
+const toConvert = new Recipience({
+  meta: { name: 'converter' },
+  convert: function(data){
+    return `${this.meta.name} ${data}`;
+  }
+})
+```
+Note that `options.convert` is not an [arrow function](https://developer.mozilla.org/id/docs/Web/JavaScript/Reference/Functions/Arrow_functions).
 
 
 ### The Instance
@@ -135,7 +160,7 @@ if(data instanceof Error) err = data;
 if you throw an error using custom object, please [extend `Error` object](https://medium.com/@xpl/javascript-deriving-from-error-properly-8d2f8f315801). So it can be detected as error.
 
 Or, use this:
-```
+```js
 const MyCustomError = Recipience.createCustomError({ name: 'MyCustomError' })
 throw new MyCustomError('This is you error message')
 ```
@@ -179,7 +204,7 @@ So, **incoming data are cached**. The cache will be flushed to the Stream when t
 
 #### recipience.error
 A callback to handle error, we can use this if `pipe` is only using one argument.
-```
+```js
 someStream.on('data', recipience.pipe)
 someStream.on('error', recipience.error)
 ```
@@ -255,7 +280,7 @@ recipience.stream.fork( Recipience [, option ] )
 ##### Option
 
 - __start__ to configure autostart. Default value is `true`
-   ```
+   ```js
    { start: true }
    ```
    By default, a stream will start listening to data event when it is piped or forked.
@@ -267,7 +292,7 @@ recipience.stream.fork( Recipience [, option ] )
 - `stream.fork` returns the orginal RecipienceStream
 
 Example:
-```
+```js
 const original = new Recipience()
 
 const pipe1 = new Recipience()
@@ -306,18 +331,24 @@ So, in the example, cache will be held in `fork1`, `fork2`, and `pipe2`.
 ##### Note on fork and pipe
 You should NOT listen to data events on the original stream if you decided to fork or pipe. Listening to data event on the original stream will redirect data flow to YOUR function, instead of the plumbing.
 
-If you need to debug your data, fork one instead.
+In the event that it should happen, an Error will be thrown:
+```
+RecipienceError: Redirecting flow from the plumbing is not recommended. Create a fork instead.
+```
+But, the stream will continue flowing.
+
+You can 
 
 
 #### recipience.stream.start
 If you decided to pipe, or fork, It will start automatically.
-```
+```js
 recipience.stream.pipe( new Recipience() )
 // will auto start
 ```
 
 You can stop autostart from happening by setting `option` on fork and pipe.
-```
+```js
 recipience.stream.pipe( new Recipience(), { start: false } )
 recipience.stream.fork( new Recipience(), { start: false } )
 
@@ -331,8 +362,9 @@ recipience.stream.start()
 #### recipience.isDone
 a `Function`
 ```
-recipience.isDone [Function()]
+recipience.isDone [Function')]
 ```
+
 Will return a boolean, that indicates wether a Recipience is marked as `done` or not.
 
 
