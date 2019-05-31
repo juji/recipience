@@ -14,5 +14,5 @@ pushtomaster(){
   # git checkout dev
 }
 
-
+echo 'run'
 [[ $2 ]] && pushtomaster
