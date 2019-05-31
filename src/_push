@@ -7,7 +7,7 @@ git commit -am "$1"
 git push origin dev
 
 pushtomaster(){
-  echo 'pushtomaster'
+  echo 'p'
   # git checkout master
   # git merge dev
   # git push origin master
@@ -15,4 +15,4 @@ pushtomaster(){
 }
 
 echo 'run'
-[[ $2 ]] && pushtomaster
+[[ "$2" === "m" ]] && pushtomaster
