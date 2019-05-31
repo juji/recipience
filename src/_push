@@ -15,4 +15,4 @@ pushtomaster(){
 }
 
 echo 'run'
-[[ "$2" === "m" ]] && pushtomaster
+[[ "$2" == "m" ]] && pushtomaster
