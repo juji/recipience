@@ -132,7 +132,14 @@ if the first arguments is an instance of `Error`, it will be regarded as Error, 
 if(data instanceof Error) err = data;
 ```
 
-if you throw an error using custom object, please [extend `Error` object](https://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript/35881508#35881508). So it can be detected as error.
+if you throw an error using custom object, please [extend `Error` object](https://medium.com/@xpl/javascript-deriving-from-error-properly-8d2f8f315801). So it can be detected as error.
+
+Or, use this:
+```
+const MyCustomError = Recipience.createCustomError({ name: 'MyCustomError' })
+throw new MyCustomError('This is you error message')
+```
+which is basically a copy from the article.
 
 
 The __pipe__, is to be used as a callback for the original event-based `.on()` call. For example:

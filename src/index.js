@@ -1,5 +1,32 @@
 require("@babel/polyfill");
 
+const createCustomError = (props) => class RecipienceError extends Error {
+   constructor (message) {
+      super (message)
+      this.constructor = RecipienceError
+      this.__proto__   = RecipienceError.prototype
+      this.message     = message
+
+      for(var i in props){
+        (
+
+          i === 'constructor' &&
+          i === '__proto__' &&
+          i === 'message'
+
+        ) || (
+
+          this[i] = props[i]
+
+        )
+
+      }
+   }
+}
+
+const RecipienceError = createCustomError({
+  name: 'RecipienceError'
+})
 const Recipience = function( opt ){
 
   let done = false
@@ -13,6 +40,10 @@ const Recipience = function( opt ){
 
   this.convert = (
     opt && opt.convert && opt.convert.constructor === Function && opt.convert
+  ) || null;
+
+  this.meta = (
+    opt && opt.meta
   ) || null;
 
   this.pipe = async function(){
@@ -149,10 +180,23 @@ const Recipience = function( opt ){
     },
     next() {
 
+      // console.log({'STATE':STATE})
+      // console.log({'arguments':arguments})
+      // console.log({'arguments[0]':arguments[0]})
+      // console.log({'arguments[0] === STATE':arguments[0] === STATE})
+      //
+      // console.log({'if condition' : (
+      //   (STATE.pipeOrForked && !arguments[0]) ||
+      //   (STATE.pipeOrForked && arguments[0] !== STATE)
+      // )});
+
+
       if(
         (STATE.pipeOrForked && !arguments[0]) ||
         (STATE.pipeOrForked && arguments[0] !== STATE)
-      ) throw new Error('Recipience is already forked or piped')
+      ) return Promise.reject(new RecipienceError('I can\'t redirect flow from the plumbing'))
+
+      // console.log('next', _t.meta)
 
       if(arguments[0] && arguments[0].isClosed && arguments[0].isClosed === 'p|f')
 
@@ -195,5 +239,8 @@ const Recipience = function( opt ){
     }
   }
 }
+
+Recipience.RecipienceError = RecipienceError;
+Recipience.CustomError = createCustomError;
 
 module.exports = exports = Recipience

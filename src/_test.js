@@ -3,7 +3,7 @@
 
 console.log(`using ${process.argv[2] || './index'}`);
 const Recipience = require(process.argv[2] || './index')
-const recipience = new Recipience()
+const recipience = new Recipience({ meta: 'main' })
 
 // console.log(recipience)
 
@@ -40,24 +40,28 @@ const writeData = () => setTimeout(() => {
   someStream.write(null, payload++)
   writeData()
 
-}, 50)
+}, 500)
 
 
 // fork and pipe
 
 const fork1 = new Recipience({
+  meta: 'fork1',
   convert: (d) => `fork1 ${d}`
 })
 
 const fork2 = new Recipience({
+  meta: 'fork2',
   convert: (d) => `fork2 ${d}`
 })
 
 const pipe1 = new Recipience({
+  meta: 'pipe1',
   convert: (d) => `pipe1 ${d}`
 })
 
 const pipe2 = new Recipience({
+  meta: 'pipe2',
   convert: (d) => `pipe2 ${d}`
 })
 
@@ -76,12 +80,14 @@ const listen = async ( recip ) => {
 
   const then = new Date()
   const Test = new Recipience({
+    meta: 'test',
     convert: data => ({
       payload: data,
       time: new Date() - then
     })
   })
   const Screen = new Recipience({
+    meta: 'screen',
     convert: data => [
       'data', data,
       'time', new Date() - then
@@ -95,7 +101,7 @@ const listen = async ( recip ) => {
 
   await Promise.all([
     Screen.stream.each(console.log),
-    Test.stream.each(TestThis()),
+    Test.stream.each(TestThis(recip)),
   ]).catch(e => {
     console.error('Recipience ERROR')
     console.error('This should not happen. Something needs to be fixed.')
@@ -108,19 +114,36 @@ const listen = async ( recip ) => {
 
 };
 
-TestThis = () => {
+TestThis = (recipient) => {
 
   const negativeTrends = 0;
   const checkTimeSlope = () => {}
-  return (data) => {
 
+  return (data) => {
+    console.log('TEST', data)
   }
 
 }
 
 
+// redirecting stream on a plumbing should throw error
+recipience.stream.each(console.log).catch(console.error)
+
+// redirecting stream on a plumbing should throw error
+// but flow should still go to the plumbing
+;(async () => {
+  await recipience.stream.each(console.log)
+/* -> toggle comment
+  .catch(e => {
+    console.log({'e.constructor === Recipience.RecipienceError': e.constructor === Recipience.RecipienceError})
+    console.log({'e instanceof Error': e instanceof Error})
+  })
+/*/
+  console.error('THIS SHOULD NOT RUN. something needs to be fixed.', r.isDone())
+/**/
+})()
+
 // start listens
-// listen(recipience)
 listen(fork1)
 listen(fork2)
 listen(pipe2)
