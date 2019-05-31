@@ -1,10 +1,11 @@
 #!/bin/bash
 
+echo '> PUSHING TO DEV >>>'
 git checkout dev
 git add -A
 git commit -am "$1"
-
 git push origin dev
+echo '>>>>> PUSHING TO DEV |'
 
 pushtomaster(){
   echo '> PUSHING TO MASTER >>>'
