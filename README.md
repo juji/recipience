@@ -47,7 +47,7 @@ const listen = () => {
     recipience.stream.next()
     .then(data => {
         doStuff( data )
-        listen();
+        setInterval(listen,0)
     ))
     .catch(propagateError)
 }
@@ -132,7 +132,7 @@ if the first arguments is an instance of `Error`, it will be regarded as Error, 
 if(data instanceof Error) err = data;
 ```
 
-if you throw an error using custom object, please [extend `Error` object](https://javascript.info/custom-errors). So it can be detected as error.
+if you throw an error using custom object, please [extend `Error` object](https://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript/35881508#35881508). So it can be detected as error.
 
 
 The __pipe__, is to be used as a callback for the original event-based `.on()` call. For example:
@@ -339,7 +339,7 @@ Consumer: here you go.
 
 After:
 ```
-Producer: i have data for you. Here, this is the Recipience.
+Producer: i have data for you, this is the Recipience.
 Consumer: ok.
 ```
 
