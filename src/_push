@@ -7,12 +7,12 @@ git commit -am "$1"
 git push origin dev
 
 pushtomaster(){
-  echo 'p'
-  # git checkout master
-  # git merge dev
-  # git push origin master
-  # git checkout dev
+  echo '- PUSHING TO MASTER >'
+  git checkout master
+  git merge dev
+  git push origin master
+  git checkout dev
+  echo '- PUSHING TO MASTER |'
 }
 
-echo 'run'
 [[ "$2" == "m" ]] && pushtomaster
