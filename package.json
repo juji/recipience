@@ -21,6 +21,6 @@
     "@babel/polyfill": "^7.4.4"
   },
   "TODO":{
-    "Throw error when a piped stream is redirected.": false,
+    "Throw error when a piped stream is redirected.": false
   }
 }
