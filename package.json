@@ -1,6 +1,6 @@
 {
   "name": "recipience",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "index.js",
   "repository": "https://github.com/juji/recipience",
   "author": "jujiyangasli@gmail.com",
@@ -9,7 +9,7 @@
     "build": "babel ./src/index.js --out-file ./index.js",
     "test": "node src/_test.js",
     "testbuild": "node src/_test.js ../index.js",
-    "push": "/bin/bash src/_push 2>&1"
+    "push": "/bin/bash src/_push"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -20,7 +20,8 @@
   "dependencies": {
     "@babel/polyfill": "^7.4.4"
   },
-  "TODO":{
-    "Throw error when a piped stream is redirected.": false
+  "TODO": {
+    "Throw error when a piped stream is redirected.": true,
+    "Use jest for testing": false
   }
 }
