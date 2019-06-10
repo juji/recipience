@@ -270,7 +270,11 @@ var Recipience = function Recipience(opt) {
 
                     _callback(v.value);
 
-                    return _flow();
+                    return new Promise(function (r) {
+                      return setTimeout(function () {
+                        return r(_flow());
+                      });
+                    });
                   }) // handle error
                   .catch(_errorCallback);
                 }; // start the flow
