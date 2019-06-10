@@ -30,7 +30,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
-require("@babel/polyfill");
+require("@babel/polyfill"); // This will make sense later
+
 
 var createCustomError = function createCustomError(props) {
   return (
@@ -48,37 +49,65 @@ var createCustomError = function createCustomError(props) {
         _this.__proto__ = RecipienceError.prototype;
         _this.message = message;
         _this.meta = meta;
-
-        for (var i in props) {
-          i === 'constructor' && i === '__proto__' && i === 'message' || (_this[i] = props[i]);
-        }
-
+        props.constructor === Object && Object.entries(props).forEach(function (key, value) {
+          key === 'constructor' && key === '__proto__' && key === 'message' || (_this[key] = value);
+        });
         return _this;
       }
 
       return RecipienceError;
     }(_wrapNativeSuper(Error))
   );
-};
+}; // This will also, make sense later
 
-var RecipienceError = createCustomError({
-  name: 'RecipienceError'
-});
+
+var RecipienceError =
+/*#__PURE__*/
+function (_Error2) {
+  _inherits(RecipienceError, _Error2);
+
+  function RecipienceError(message) {
+    var _this2;
+
+    _classCallCheck(this, RecipienceError);
+
+    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(RecipienceError).call(this, message));
+    _this2.constructor = RecipienceError;
+    _this2.__proto__ = RecipienceError.prototype;
+    _this2.message = message;
+    _this2.name = 'RecipienceError';
+    return _this2;
+  }
+
+  return RecipienceError;
+}(_wrapNativeSuper(Error)); // this is the thing...
+// the receiving end of a data stream
+// it has one optional parameter
+// an object
+
 
 var Recipience = function Recipience(opt) {
+  // it has states
   var done = false;
   var error = null;
   var resolver = null;
   var rejector = null;
-  var cache = [];
+  var cache = []; // this is an id; a pointer to this
 
   var _t = this;
 
-  var STATE = {
+  var SOUL = {
     pipeOrForked: false
-  };
-  this.convert = opt && opt.convert && opt.convert.constructor === Function && opt.convert || null;
-  this.meta = opt && opt.meta || null;
+  }; // first option, what should we do with the data?
+  // opt.convert
+  // it must be a function
+
+  this.convert = opt && opt.convert && opt.convert.constructor === Function && opt.convert || null; // second config
+  // custom properties from the user
+  // opt.meta
+
+  this.meta = opt && opt.meta || null; // the feature
+
   this.pipe =
   /*#__PURE__*/
   _asyncToGenerator(
@@ -100,12 +129,14 @@ var Recipience = function Recipience(opt) {
             return _context.abrupt("return");
 
           case 2:
-            // if(_t.convert.constructor.name === "AsyncFunction"){
-            //   _t.error(new Error('Convert function should not be an async function'))
-            // }
             err = _args.length === 2 ? _args[0] : null;
-            payload = _args.length === 1 ? _args[0] : _args[1];
-            if (payload instanceof Error) err = (_readOnlyError("err"), payload);
+            payload = _args.length === 1 ? _args[0] : _args[1]; // payload can be a string, array, or anything. But not an Error.
+            // createCustomError in line 4 should help you in creating custom error
+            // or extend Recipience.RecipienceError
+
+            if (payload instanceof Error) {
+              err = (_readOnlyError("err"), payload);
+            }
 
             if (!err) {
               _context.next = 9;
@@ -150,11 +181,12 @@ var Recipience = function Recipience(opt) {
         }
       }
     }, _callee);
-  }));
+  })); // the feature
 
   this.isDone = function () {
     return done;
-  };
+  }; // the feature
+
 
   this.done = function () {
     done = true;
@@ -163,7 +195,8 @@ var Recipience = function Recipience(opt) {
       done: true
     });
     resolver = rejector = null;
-  };
+  }; // the feature
+
 
   this.error = function (err) {
     error = err;
@@ -171,110 +204,93 @@ var Recipience = function Recipience(opt) {
     if (!rejector) return;
     rejector(err);
     resolver = rejector = null;
-  };
+  }; // the feature
+
 
   this.stream = _defineProperty({
     _pipes: [],
     __started: false,
+    // starting the stream, after piping
     start: function () {
       var _start = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee3() {
-        var _this2 = this;
+      regeneratorRuntime.mark(function _callee2() {
+        var _this3 = this;
 
-        var i, _callback, _errorCallback, _run;
+        var _callback, _errorCallback, _flow;
 
-        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+        return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
                 if (!this.__started) {
-                  _context3.next = 2;
+                  _context2.next = 2;
                   break;
                 }
 
-                return _context3.abrupt("return");
+                return _context2.abrupt("return");
 
               case 2:
-                this.__started = true;
-                STATE.pipeOrForked = true;
-
                 if (this._pipes.length) {
-                  _context3.next = 6;
+                  _context2.next = 4;
                   break;
                 }
 
                 throw new RecipienceError('Error in starting Stream: No point to start without a pipe.', _t.meta);
 
-              case 6:
-                // start other Receipience,
-                // only when a recipience pipes the data
-                // if not, the data will be cached on the recipience,
-                // and will be flushed at the appropriate time
-                for (i = 0; i < this._pipes.length; i++) {
-                  if (this._pipes[i].stream._pipes.length) this._pipes[i].stream.start();
-                }
+              case 4:
+                // set stream
+                this.__started = true;
+                SOUL.pipeOrForked = true; // start all forks and pipes,
+
+                this._pipes.forEach(function (pipe) {
+                  pipe && pipe.stream && pipe.stream._pipes.length && pipe.stream.start();
+                }); // redirect stream to all pipes
+
 
                 _callback = function _callback(data) {
-                  for (var i = 0; i < _this2._pipes.length; i++) {
-                    _this2._pipes[i].pipe(data);
-                  }
+                  _this3._pipes.forEach(function (pipe) {
+                    return pipe.pipe(data);
+                  });
                 };
 
                 _errorCallback = function _errorCallback(e) {
-                  for (var i = 0; i < _this2._pipes.length; i++) {
-                    _this2._pipes[i].error(e);
-                  }
-                };
+                  _this3._pipes.forEach(function (pipe) {
+                    return pipe.error(e);
+                  });
+                }; // the flow
+                //
 
-                _run =
-                /*#__PURE__*/
-                function () {
-                  var _ref2 = _asyncToGenerator(
-                  /*#__PURE__*/
-                  regeneratorRuntime.mark(function _callee2() {
-                    return regeneratorRuntime.wrap(function _callee2$(_context2) {
-                      while (1) {
-                        switch (_context2.prev = _context2.next) {
-                          case 0:
-                            _context2.next = 2;
-                            return _this2.next(STATE).then(function (v) {
-                              if (!v.done) {
-                                _callback(v.value);
 
-                                return _run();
-                              } else {
-                                return v;
-                              }
-                            }).catch(_errorCallback);
+                _flow = function _flow() {
+                  // get next value
+                  return _this3.next(SOUL) // do with value
+                  .then(function (v) {
+                    if (v.done) return v;
 
-                          case 2:
-                          case "end":
-                            return _context2.stop();
-                        }
-                      }
-                    }, _callee2);
-                  }));
+                    _callback(v.value);
 
-                  return function _run() {
-                    return _ref2.apply(this, arguments);
-                  };
-                }();
+                    return _flow();
+                  }) // handle error
+                  .catch(_errorCallback);
+                }; // start the flow
 
-                _context3.next = 12;
-                return _run();
+
+                _context2.next = 12;
+                return _flow();
 
               case 12:
-                for (i = 0; i < this._pipes.length; i++) {
-                  this._pipes[i].done();
-                }
+                // after the stream ends
+                this._pipes.forEach(function (pipe) {
+                  pipe.done();
+                });
 
               case 13:
               case "end":
-                return _context3.stop();
+                return _context2.stop();
             }
           }
-        }, _callee3, this);
+        }, _callee2, this);
       }));
 
       function start() {
@@ -284,7 +300,7 @@ var Recipience = function Recipience(opt) {
       return start;
     }(),
     pipe: function pipe(recipience, opt) {
-      if (recipience.constructor !== Recipience) throw new RecipienceError('Error in piping Stream: The fork needs to be a Recipience', _t.meta);
+      if (recipience.constructor !== Recipience) throw new RecipienceError('Error in piping Stream: The pipe needs to be a Recipience', _t.meta);
       opt = _objectSpread({
         start: true
       }, opt || {});
@@ -306,32 +322,20 @@ var Recipience = function Recipience(opt) {
       return this;
     },
     each: function each(fn) {
-      var _this3 = this;
+      var _this4 = this;
 
       return this.next().then(function (v) {
         if (!v.done) {
           fn(v.value);
-          return _this3.each(fn);
+          return _this4.each(fn);
         } else {
           return v;
         }
-      }).catch(function (e) {
-        return Promise.reject(e);
       });
     },
     next: function next() {
-      // console.log({'STATE':STATE})
-      // console.log({'arguments':arguments})
-      // console.log({'arguments[0]':arguments[0]})
-      // console.log({'arguments[0] === STATE':arguments[0] === STATE})
-      //
-      // console.log({'if condition' : (
-      //   (STATE.pipeOrForked && !arguments[0]) ||
-      //   (STATE.pipeOrForked && arguments[0] !== STATE)
-      // )});
-      if (STATE.pipeOrForked && !arguments[0] || STATE.pipeOrForked && arguments[0] !== STATE) return Promise.reject(new RecipienceError('Cannot redirect flow from the plumbing, Create a fork instead.', _t.meta)); // console.log('next', _t.meta)
-
-      if (arguments[0] && arguments[0].isClosed && arguments[0].isClosed === 'p|f') this.__started = true;
+      if (SOUL.pipeOrForked && !arguments[0] || SOUL.pipeOrForked && arguments[0] !== SOUL) return Promise.reject(new RecipienceError('Cannot redirect flow from the plumbing, Create a fork instead.', _t.meta));
+      this.__started = true;
       if (cache.length) return Promise.resolve({
         value: cache.shift(),
         done: false
@@ -347,24 +351,7 @@ var Recipience = function Recipience(opt) {
     }
   }, Symbol.asyncIterator, function () {
     return {
-      next: _t.stream.next // async next() {
-      //
-      //   _t.stream.__started = true;
-      //
-      //   if(cache.length) return Promise.resolve({
-      //     value: cache.shift(),
-      //     done: false
-      //   })
-      //   if(error) return Promise.reject(error)
-      //   if(done) return Promise.resolve({ done: true })
-      //
-      //   return new Promise((r,j) => {
-      //     resolver = r;
-      //     rejector = j;
-      //   })
-      //
-      // }
-
+      next: _t.stream.next
     };
   });
 };
