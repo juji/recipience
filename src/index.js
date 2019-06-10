@@ -1,5 +1,6 @@
 require("@babel/polyfill");
 
+// This will make sense later
 const createCustomError = (props) => class RecipienceError extends Error {
    constructor (message, meta) {
       super (message)
@@ -9,147 +10,183 @@ const createCustomError = (props) => class RecipienceError extends Error {
 
       this.meta = meta;
 
-      for(var i in props){
+      props.constructor === Object &&
+      Object.entries(props).forEach((key, value) => {
         (
 
-          i === 'constructor' &&
-          i === '__proto__' &&
-          i === 'message'
+          key === 'constructor' &&
+          key === '__proto__' &&
+          key === 'message'
 
         ) || (
 
-          this[i] = props[i]
+          this[key] = value
 
         )
+      });
 
-      }
    }
 }
 
-const RecipienceError = createCustomError({
-  name: 'RecipienceError'
-});
+// This will also, make sense later
+const RecipienceError = class RecipienceError extends Error {
+   constructor (message) {
+      super (message)
+      this.constructor = RecipienceError
+      this.__proto__   = RecipienceError.prototype
+      this.message     = message
+      this.name        = 'RecipienceError'
+    }
+}
 
+
+// this is the thing...
+// the receiving end of a data stream
+// it has one optional parameter
+// an object
 const Recipience = function( opt ){
 
+  // it has states
   let done = false
   let error = null
   let resolver = null
   let rejector = null
   const cache = []
+
+  // this is an id; a pointer to this
   const _t = this;
+  const SOUL = { pipeOrForked: false };
 
-  const STATE = { pipeOrForked: false };
-
+  // first option, what should we do with the data?
+  // opt.convert
+  // it must be a function
   this.convert = (
     opt && opt.convert && opt.convert.constructor === Function && opt.convert
   ) || null;
 
+  // second config
+  // custom properties from the user
+  // opt.meta
   this.meta = (
     opt && opt.meta
   ) || null;
 
+  // the feature
   this.pipe = async function(){
 
     if(done) return;
-
-    // if(_t.convert.constructor.name === "AsyncFunction"){
-    //   _t.error(new Error('Convert function should not be an async function'))
-    // }
-
     const err = arguments.length === 2 ? arguments[0] : null;
     const payload = arguments.length === 1 ? arguments[0] : arguments[1];
-    if(payload instanceof Error) err = payload;
 
-    if(err) _t.error(err);
+    // payload can be a string, array, or anything. But not an Error.
+    // createCustomError in line 4 should help you in creating custom error
+    // or extend Recipience.RecipienceError
+    if(payload instanceof Error) { err = payload; }
+
+    if(err) { _t.error(err); }
+
+    // conditions where the stream flows
     else {
+
       const data = _t.convert ? await _t.convert(payload) : payload;
+
       resolver ? resolver({
         value: data,
         done: false
       }) : cache.push(data);
+
     }
 
     resolver = rejector = null
 
   }
 
+  // the feature
   this.isDone = () => done
 
+  // the feature
   this.done = function(){
     done = true
-
     if(!resolver) return;
     resolver({ done: true })
     resolver = rejector = null
   }
 
+  // the feature
   this.error = function(err){
     error = err
     done = true
-
     if(!rejector) return;
     rejector(err)
     resolver = rejector = null
   }
 
+  // the feature
   this.stream = {
     _pipes: [],
     __started: false,
+
+    // starting the stream, after piping
     async start(){
 
+      // this === stream
+      // ...
       if(this.__started) return;
-      this.__started = true;
-
-      STATE.pipeOrForked = true;
-
       if(!this._pipes.length)
-        throw new RecipienceError(
-          'Error in starting Stream: No point to start without a pipe.',
-          _t.meta
-        )
+      throw new RecipienceError(
+        'Error in starting Stream: No point to start without a pipe.',
+        _t.meta
+      )
 
-      // start other Receipience,
-      // only when a recipience pipes the data
-      // if not, the data will be cached on the recipience,
-      // and will be flushed at the appropriate time
-      for(var i=0;i<this._pipes.length;i++){
-        if(this._pipes[i].stream._pipes.length)
-          this._pipes[i].stream.start()
-      }
+      // set stream
+      this.__started = true;
+      SOUL.pipeOrForked = true;
 
-      const _callback = (data) => {
-        for(var i=0;i<this._pipes.length;i++)
-          this._pipes[i].pipe(data)
-      }
 
-      const _errorCallback = e => {
-        for(var i=0;i<this._pipes.length;i++)
-          this._pipes[i].error(e)
-      }
+      // start all forks and pipes,
+      this._pipes.forEach(pipe => {
 
-      const _run = async () => {
-        await this.next(STATE)
+        pipe && pipe.stream &&
+        pipe.stream._pipes.length &&
+        pipe.stream.start()
+
+      })
+
+      // redirect stream to all pipes
+      const _callback = (data) => { this._pipes.forEach(pipe => pipe.pipe(data)) }
+      const _errorCallback = e => { this._pipes.forEach(pipe => pipe.error(e)) }
+
+      // the flow
+      //
+      const _flow = () => {
+
+        // get next value
+        return this.next(SOUL)
+
+        // do with value
         .then(v => {
-          if(!v.done) {
-            _callback(v.value);
-            return _run()
-          }else{
-            return v;
-          }
+          if(v.done) return v;
+          _callback(v.value);
+          return _flow()
         })
+
+        // handle error
         .catch(_errorCallback)
+
       }
 
-      await _run();
-      for(var i=0;i<this._pipes.length;i++)
-        this._pipes[i].done()
+      // start the flow
+      await _flow();
+
+      // after the stream ends
+      this._pipes.forEach(pipe => { pipe.done() })
 
     },
     pipe( recipience, opt ){
+
       if(recipience.constructor !== Recipience)
         throw new RecipienceError(
-          'Error in piping Stream: The fork needs to be a Recipience',
+          'Error in piping Stream: The pipe needs to be a Recipience',
           _t.meta
         )
 
@@ -188,24 +225,12 @@ const Recipience = function( opt ){
           return v;
         }
       })
-      .catch(e => Promise.reject(e))
     },
     next() {
 
-      // console.log({'STATE':STATE})
-      // console.log({'arguments':arguments})
-      // console.log({'arguments[0]':arguments[0]})
-      // console.log({'arguments[0] === STATE':arguments[0] === STATE})
-      //
-      // console.log({'if condition' : (
-      //   (STATE.pipeOrForked && !arguments[0]) ||
-      //   (STATE.pipeOrForked && arguments[0] !== STATE)
-      // )});
-
-
       if(
-        (STATE.pipeOrForked && !arguments[0]) ||
-        (STATE.pipeOrForked && arguments[0] !== STATE)
+        (SOUL.pipeOrForked && !arguments[0]) ||
+        (SOUL.pipeOrForked && arguments[0] !== SOUL)
       ) return Promise.reject(
         new RecipienceError(
           'Cannot redirect flow from the plumbing, Create a fork instead.',
@@ -213,18 +238,15 @@ const Recipience = function( opt ){
         )
       )
 
-      // console.log('next', _t.meta)
-
-      if(arguments[0] && arguments[0].isClosed && arguments[0].isClosed === 'p|f')
-
       this.__started = true;
 
       if(cache.length) return Promise.resolve({
         value: cache.shift(),
         done: false
-      })
-      if(error) return Promise.reject(error)
-      if(done) return Promise.resolve({ done: true })
+      });
+
+      if(error) return Promise.reject(error);
+      if(done) return Promise.resolve({ done: true });
 
       return new Promise((r,j) => {
         resolver = r;
@@ -235,23 +257,6 @@ const Recipience = function( opt ){
     [Symbol.asyncIterator]() {
       return {
         next: _t.stream.next
-        // async next() {
-        //
-        //   _t.stream.__started = true;
-        //
-        //   if(cache.length) return Promise.resolve({
-        //     value: cache.shift(),
-        //     done: false
-        //   })
-        //   if(error) return Promise.reject(error)
-        //   if(done) return Promise.resolve({ done: true })
-        //
-        //   return new Promise((r,j) => {
-        //     resolver = r;
-        //     rejector = j;
-        //   })
-        //
-        // }
       }
     }
   }
