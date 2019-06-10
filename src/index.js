@@ -167,7 +167,7 @@ const Recipience = function( opt ){
         .then(v => {
           if(v.done) return v;
           _callback(v.value);
-          return _flow()
+          return new Promise(r => setTimeout(() => r(_flow())))
         })
 
         // handle error
@@ -213,7 +213,7 @@ const Recipience = function( opt ){
 
       this._pipes.push(recipience)
       opt.start && this.start();
-      return this;
+      return this
     },
     each(fn){
       return this.next()
@@ -222,7 +222,7 @@ const Recipience = function( opt ){
           fn(v.value);
           return this.each(fn)
         }else{
-          return v;
+          return v
         }
       })
     },
@@ -236,7 +236,7 @@ const Recipience = function( opt ){
           'Cannot redirect flow from the plumbing, Create a fork instead.',
           _t.meta
         )
-      )
+      );
 
       this.__started = true;
 
