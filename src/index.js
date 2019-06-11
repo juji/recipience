@@ -51,11 +51,12 @@ const Recipience = function( opt ){
   let error = null
   let resolver = null
   let rejector = null
+  let pipes = []
   const cache = []
 
-  // this is an id; a pointer to this
-  const _t = this;
-  const SOUL = { pipeOrForked: false };
+  // this is an id; a pointer to 'this'
+  const _t = this; // an id the outside world can access
+  const SOUL = { pipeOrForked: false }; // an id only this scope can access
 
   // first option, what should we do with the data?
   // opt.convert
@@ -71,6 +72,7 @@ const Recipience = function( opt ){
     opt && opt.meta
   ) || null;
 
+
   // the feature
   this.pipe = async function(){
 
@@ -79,11 +81,18 @@ const Recipience = function( opt ){
     const payload = arguments.length === 1 ? arguments[0] : arguments[1];
 
     // payload can be a string, array, or anything. But not an Error.
-    // createCustomError in line 4 should help you in creating custom error
+    // Recipience.CustomError should help you in creating custom error
     // or extend Recipience.RecipienceError
     if(payload instanceof Error) { err = payload; }
 
-    if(err) { _t.error(err); }
+    console.log({
+      done,
+      err, payload
+    })
+
+    if(err) {
+      _t.error(err);
+    }
 
     // conditions where the stream flows
     else {
@@ -99,12 +108,18 @@ const Recipience = function( opt ){
 
     resolver = rejector = null
 
+
+
   }
 
   // the feature
+  // expose 'done' to user
   this.isDone = () => done
 
+  this.hasPipes = () => pipes.length && pipes.length
+
   // the feature
+  // mark this recipience as done
   this.done = function(){
     done = true
     if(!resolver) return;
@@ -113,6 +128,8 @@ const Recipience = function( opt ){
   }
 
   // the feature
+  // mark this recipience as error
+  // flow will not run after this
   this.error = function(err){
     error = err
     done = true
@@ -123,8 +140,6 @@ const Recipience = function( opt ){
 
   // the feature
   this.stream = {
-    _pipes: [],
-    __started: false,
 
     // starting the stream, after piping
     async start(){
@@ -132,54 +147,39 @@ const Recipience = function( opt ){
       // this === stream
       // ...
       if(this.__started) return;
-      if(!this._pipes.length)
+      if(!pipes.length)
       throw new RecipienceError(
         'Error in starting Stream: No point to start without a pipe.',
         _t.meta
       )
 
       // set stream
+      // and marked it as piped
       this.__started = true;
-      SOUL.pipeOrForked = true;
 
 
       // start all forks and pipes,
-      this._pipes.forEach(pipe => {
+      pipes.length && pipes.forEach(pipe => {
 
         pipe && pipe.stream &&
-        pipe.stream._pipes.length &&
+        pipe.hasPipes() &&
         pipe.stream.start()
 
       })
 
-      // redirect stream to all pipes
-      const _callback = (data) => { this._pipes.forEach(pipe => pipe.pipe(data)) }
-      const _errorCallback = e => { this._pipes.forEach(pipe => pipe.error(e)) }
 
-      // the flow
-      //
-      const _flow = () => {
-
-        // get next value
-        return this.next(SOUL)
-
-        // do with value
-        .then(v => {
-          if(v.done) return v;
-          _callback(v.value);
-          return new Promise(r => setTimeout(() => r(_flow())))
-        })
-
-        // handle error
-        .catch(_errorCallback)
-
+      // start stream
+      try{
+        for await (const value of this){
+          console.log({value})
+          pipes.length && pipes.forEach(pipe => pipes.pipe && pipes.pipe(value))
+        }
+      }catch(e){
+        pipes.length && pipes.forEach(pipe => pipes.pipe && pipes.error(e))
       }
 
-      // start the flow
-      await _flow();
-
       // after the stream ends
-      this._pipes.forEach(pipe => { pipe.done() })
+      pipes.length && pipes.forEach(pipe => { pipe.done() })
 
     },
     pipe( recipience, opt ){
@@ -195,7 +195,7 @@ const Recipience = function( opt ){
         ...(opt||{})
       };
 
-      this._pipes.push(recipience)
+      pipes.push(recipience);
       opt.start && this.start();
       return recipience.stream;
     },
@@ -211,27 +211,21 @@ const Recipience = function( opt ){
         ...(opt||{})
       };
 
-      this._pipes.push(recipience)
+      pipes.push(recipience);
       opt.start && this.start();
       return this
     },
-    each(fn){
-      return this.next()
-      .then(v => {
-        if(!v.done) {
-          fn(v.value);
-          return this.each(fn)
-        }else{
-          return v
-        }
-      })
+    async each(fn){
+      for await (const value of _t.stream){
+        fn(value)
+      }
     },
     next() {
 
-      if(
-        (SOUL.pipeOrForked && !arguments[0]) ||
-        (SOUL.pipeOrForked && arguments[0] !== SOUL)
-      ) return Promise.reject(
+      // console.log(arguments.callee.toString())
+
+      const isRedirected = false
+      if(isRedirected) return Promise.reject(
         new RecipienceError(
           'Cannot redirect flow from the plumbing, Create a fork instead.',
           _t.meta

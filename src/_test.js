@@ -29,18 +29,19 @@ for(let i = -10; i<0; i++)
 
 // send the data on an interval
 let payload = 0
+let writeInterval = 0
 const writeData = () => setTimeout(() => {
 
-  if(payload === 10){
-    someStream.write(null, null)
-    // someStream.write(new Error('test error'))
-    return
-  }
+  // if(payload === 10){
+  //   someStream.write(null, null)
+  //   // someStream.write(new Error('test error'))
+  //   return
+  // }
 
   someStream.write(null, payload++)
   writeData()
 
-}, 500)
+}, writeInterval)
 
 
 // fork and pipe
@@ -128,10 +129,10 @@ TestThis = (recipient) => {
 
 // redirecting stream on a plumbing should throw error
 // but the flow continues
-recipience.stream.each(console.log)
-  .catch(console.error)
+// recipience.stream.each(v => console.log({ REDIRECTED: v }))
+//   .catch(console.error)
 
 // start listens
 listen(fork1)
-listen(fork2)
-listen(pipe2)
+// listen(fork2)
+// listen(pipe2)
