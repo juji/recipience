@@ -6,6 +6,8 @@ The receiving-end of a data-stream system.
 
 It converts a callback-based workflow into an [AsyncIterator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator) workflow.
 
+__NOT FOR PRODUCTION__
+
 ## Install
 ```
 npm install recipience
@@ -337,7 +339,7 @@ RecipienceError: Redirecting flow from the plumbing is not recommended. Create a
 ```
 But, the stream will continue flowing.
 
-You can 
+You can
 
 
 #### recipience.stream.start

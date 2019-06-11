@@ -23,6 +23,7 @@
   },
   "TODO": {
     "Throw error when a piped stream is redirected.": true,
-    "Use jest for testing": false
+    "Use jest for testing": false,
+    "FIX Error: recursive is failing": false
   }
 }
