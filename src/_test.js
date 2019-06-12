@@ -29,18 +29,19 @@ for(let i = -10; i<0; i++)
 
 // send the data on an interval
 let payload = 0
+let cycle = 0;
 const writeData = () => setTimeout(() => {
 
-  if(payload === 10){
-    someStream.write(null, null)
-    // someStream.write(new Error('test error'))
-    return
-  }
+  // if(payload === 10){
+  //   someStream.write(null, null)
+  //   // someStream.write(new Error('test error'))
+  //   return
+  // }
 
   someStream.write(null, payload++)
   writeData()
 
-}, 500)
+}, 0)
 
 
 // fork and pipe
@@ -109,8 +110,7 @@ const listen = async ( recip ) => {
   })
 
   // done
-  console.log('DONE', recip.isDone())
-  console.log('OK ERROR or DONE have been called')
+  console.log('DONE', recip.meta, recip.isDone())
 
 };
 

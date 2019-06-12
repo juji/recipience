@@ -51,6 +51,7 @@ const Recipience = function( opt ){
   let error = null
   let resolver = null
   let rejector = null
+  const pipes = []
   const cache = []
 
   // this is an id; a pointer to this
@@ -105,6 +106,9 @@ const Recipience = function( opt ){
   this.isDone = () => done
 
   // the feature
+  this.isPiped = () => pipes.length
+
+  // the feature
   this.done = function(){
     done = true
     if(!resolver) return;
@@ -121,9 +125,34 @@ const Recipience = function( opt ){
     resolver = rejector = null
   }
 
+  // needed
+  const internalIterator = {
+    [Symbol.asyncIterator](){
+      return {
+        next(){
+
+          _t.stream.__started = true;
+
+          if(cache.length) return Promise.resolve({
+            value: cache.shift(),
+            done: false
+          });
+
+          if(error) return Promise.reject(error);
+          if(done) return Promise.resolve({ done: true });
+
+          return new Promise((r,j) => {
+            resolver = r;
+            rejector = j;
+          })
+
+        }
+      }
+    }
+  }
+
   // the feature
   this.stream = {
-    _pipes: [],
     __started: false,
 
     // starting the stream, after piping
@@ -132,7 +161,7 @@ const Recipience = function( opt ){
       // this === stream
       // ...
       if(this.__started) return;
-      if(!this._pipes.length)
+      if(!pipes.length)
       throw new RecipienceError(
         'Error in starting Stream: No point to start without a pipe.',
         _t.meta
@@ -144,42 +173,28 @@ const Recipience = function( opt ){
 
 
       // start all forks and pipes,
-      this._pipes.forEach(pipe => {
+      pipes.forEach(pipe => {
 
         pipe && pipe.stream &&
-        pipe.stream._pipes.length &&
+        pipe.isPiped() &&
         pipe.stream.start()
 
       })
 
       // redirect stream to all pipes
-      const _callback = (data) => { this._pipes.forEach(pipe => pipe.pipe(data)) }
-      const _errorCallback = e => { this._pipes.forEach(pipe => pipe.error(e)) }
+      const _callback = (data) => { pipes.forEach(pipe => pipe.pipe(data)) }
+      const _errorCallback = e => { pipes.forEach(pipe => pipe.error(e)) }
 
-      // the flow
-      //
-      const _flow = () => {
-
-        // get next value
-        return this.next(SOUL)
-
-        // do with value
-        .then(v => {
-          if(v.done) return v;
-          _callback(v.value);
-          return new Promise(r => setTimeout(() => r(_flow())))
-        })
-
-        // handle error
-        .catch(_errorCallback)
-
+      try{
+        for await (const v of internalIterator){
+          pipes.forEach(pipe => pipe.pipe(v))
+        }
+      }catch(e){
+        pipes.forEach(pipe => pipe.error(e))
       }
 
-      // start the flow
-      await _flow();
-
       // after the stream ends
-      this._pipes.forEach(pipe => { pipe.done() })
+      pipes.forEach(pipe => { pipe.done() })
 
     },
     pipe( recipience, opt ){
@@ -195,7 +210,7 @@ const Recipience = function( opt ){
         ...(opt||{})
       };
 
-      this._pipes.push(recipience)
+      pipes.push(recipience)
       opt.start && this.start();
       return recipience.stream;
     },
@@ -211,27 +226,19 @@ const Recipience = function( opt ){
         ...(opt||{})
       };
 
-      this._pipes.push(recipience)
+      pipes.push(recipience)
       opt.start && this.start();
       return this
     },
-    each(fn){
-      return this.next()
-      .then(v => {
-        if(!v.done) {
-          fn(v.value);
-          return this.each(fn)
-        }else{
-          return v
-        }
-      })
+    async each(fn){
+      for await (const v of this){
+        fn(v)
+      }
     },
     next() {
 
-      if(
-        (SOUL.pipeOrForked && !arguments[0]) ||
-        (SOUL.pipeOrForked && arguments[0] !== SOUL)
-      ) return Promise.reject(
+      // if redirected
+      if( pipes.length ) return Promise.reject(
         new RecipienceError(
           'Cannot redirect flow from the plumbing, Create a fork instead.',
           _t.meta
