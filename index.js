@@ -30,6 +30,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
+function _asyncIterator(iterable) { var method; if (typeof Symbol !== "undefined") { if (Symbol.asyncIterator) { method = iterable[Symbol.asyncIterator]; if (method != null) return method.call(iterable); } if (Symbol.iterator) { method = iterable[Symbol.iterator]; if (method != null) return method.call(iterable); } } throw new TypeError("Object is not async iterable"); }
+
 require("@babel/polyfill"); // This will make sense later
 
 
@@ -92,6 +94,7 @@ var Recipience = function Recipience(opt) {
   var error = null;
   var resolver = null;
   var rejector = null;
+  var pipes = [];
   var cache = []; // this is an id; a pointer to this
 
   var _t = this;
@@ -188,6 +191,11 @@ var Recipience = function Recipience(opt) {
   }; // the feature
 
 
+  this.isPiped = function () {
+    return pipes.length;
+  }; // the feature
+
+
   this.done = function () {
     done = true;
     if (!resolver) return;
@@ -204,20 +212,38 @@ var Recipience = function Recipience(opt) {
     if (!rejector) return;
     rejector(err);
     resolver = rejector = null;
-  }; // the feature
+  }; // needed
+
+
+  var internalIterator = _defineProperty({}, Symbol.asyncIterator, function () {
+    return {
+      next: function next() {
+        _t.stream.__started = true;
+        if (cache.length) return Promise.resolve({
+          value: cache.shift(),
+          done: false
+        });
+        if (error) return Promise.reject(error);
+        if (done) return Promise.resolve({
+          done: true
+        });
+        return new Promise(function (r, j) {
+          resolver = r;
+          rejector = j;
+        });
+      }
+    };
+  }); // the feature
 
 
   this.stream = _defineProperty({
-    _pipes: [],
     __started: false,
     // starting the stream, after piping
     start: function () {
       var _start = _asyncToGenerator(
       /*#__PURE__*/
       regeneratorRuntime.mark(function _callee2() {
-        var _this3 = this;
-
-        var _callback, _errorCallback, _flow;
+        var _callback, _errorCallback, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _loop, _iterator, _step, _value;
 
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
@@ -231,7 +257,7 @@ var Recipience = function Recipience(opt) {
                 return _context2.abrupt("return");
 
               case 2:
-                if (this._pipes.length) {
+                if (pipes.length) {
                   _context2.next = 4;
                   break;
                 }
@@ -243,58 +269,122 @@ var Recipience = function Recipience(opt) {
                 this.__started = true;
                 SOUL.pipeOrForked = true; // start all forks and pipes,
 
-                this._pipes.forEach(function (pipe) {
-                  pipe && pipe.stream && pipe.stream._pipes.length && pipe.stream.start();
+                pipes.forEach(function (pipe) {
+                  pipe && pipe.stream && pipe.isPiped() && pipe.stream.start();
                 }); // redirect stream to all pipes
 
-
                 _callback = function _callback(data) {
-                  _this3._pipes.forEach(function (pipe) {
+                  pipes.forEach(function (pipe) {
                     return pipe.pipe(data);
                   });
                 };
 
                 _errorCallback = function _errorCallback(e) {
-                  _this3._pipes.forEach(function (pipe) {
+                  pipes.forEach(function (pipe) {
                     return pipe.error(e);
                   });
-                }; // the flow
-                //
+                };
 
+                _context2.prev = 9;
+                _iteratorNormalCompletion = true;
+                _didIteratorError = false;
+                _context2.prev = 12;
 
-                _flow = function _flow() {
-                  // get next value
-                  return _this3.next(SOUL) // do with value
-                  .then(function (v) {
-                    if (v.done) return v;
+                _loop = function _loop() {
+                  var v = _value;
+                  pipes.forEach(function (pipe) {
+                    return pipe.pipe(v);
+                  });
+                };
 
-                    _callback(v.value);
+                _iterator = _asyncIterator(internalIterator);
 
-                    return new Promise(function (r) {
-                      return setTimeout(function () {
-                        return r(_flow());
-                      });
-                    });
-                  }) // handle error
-                  .catch(_errorCallback);
-                }; // start the flow
+              case 15:
+                _context2.next = 17;
+                return _iterator.next();
 
+              case 17:
+                _step = _context2.sent;
+                _iteratorNormalCompletion = _step.done;
+                _context2.next = 21;
+                return _step.value;
 
-                _context2.next = 12;
-                return _flow();
+              case 21:
+                _value = _context2.sent;
 
-              case 12:
+                if (_iteratorNormalCompletion) {
+                  _context2.next = 27;
+                  break;
+                }
+
+                _loop();
+
+              case 24:
+                _iteratorNormalCompletion = true;
+                _context2.next = 15;
+                break;
+
+              case 27:
+                _context2.next = 33;
+                break;
+
+              case 29:
+                _context2.prev = 29;
+                _context2.t0 = _context2["catch"](12);
+                _didIteratorError = true;
+                _iteratorError = _context2.t0;
+
+              case 33:
+                _context2.prev = 33;
+                _context2.prev = 34;
+
+                if (!(!_iteratorNormalCompletion && _iterator.return != null)) {
+                  _context2.next = 38;
+                  break;
+                }
+
+                _context2.next = 38;
+                return _iterator.return();
+
+              case 38:
+                _context2.prev = 38;
+
+                if (!_didIteratorError) {
+                  _context2.next = 41;
+                  break;
+                }
+
+                throw _iteratorError;
+
+              case 41:
+                return _context2.finish(38);
+
+              case 42:
+                return _context2.finish(33);
+
+              case 43:
+                _context2.next = 48;
+                break;
+
+              case 45:
+                _context2.prev = 45;
+                _context2.t1 = _context2["catch"](9);
+                pipes.forEach(function (pipe) {
+                  return pipe.error(_context2.t1);
+                });
+
+              case 48:
                 // after the stream ends
-                this._pipes.forEach(function (pipe) {
+                pipes.forEach(function (pipe) {
                   pipe.done();
                 });
 
-              case 13:
+              case 49:
               case "end":
                 return _context2.stop();
             }
           }
-        }, _callee2, this);
+        }, _callee2, this, [[9, 45], [12, 29, 33, 43], [34,, 38, 42]]);
       }));
 
       function start() {
@@ -308,9 +398,7 @@ var Recipience = function Recipience(opt) {
       opt = _objectSpread({
         start: true
       }, opt || {});
-
-      this._pipes.push(recipience);
-
+      pipes.push(recipience);
       opt.start && this.start();
       return recipience.stream;
     },
@@ -319,26 +407,106 @@ var Recipience = function Recipience(opt) {
       opt = _objectSpread({
         start: true
       }, opt || {});
-
-      this._pipes.push(recipience);
-
+      pipes.push(recipience);
       opt.start && this.start();
       return this;
     },
-    each: function each(fn) {
-      var _this4 = this;
+    each: function () {
+      var _each = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee3(fn) {
+        var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, _value2, v;
 
-      return this.next().then(function (v) {
-        if (!v.done) {
-          fn(v.value);
-          return _this4.each(fn);
-        } else {
-          return v;
-        }
-      });
-    },
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _iteratorNormalCompletion2 = true;
+                _didIteratorError2 = false;
+                _context3.prev = 2;
+                _iterator2 = _asyncIterator(this);
+
+              case 4:
+                _context3.next = 6;
+                return _iterator2.next();
+
+              case 6:
+                _step2 = _context3.sent;
+                _iteratorNormalCompletion2 = _step2.done;
+                _context3.next = 10;
+                return _step2.value;
+
+              case 10:
+                _value2 = _context3.sent;
+
+                if (_iteratorNormalCompletion2) {
+                  _context3.next = 17;
+                  break;
+                }
+
+                v = _value2;
+                fn(v);
+
+              case 14:
+                _iteratorNormalCompletion2 = true;
+                _context3.next = 4;
+                break;
+
+              case 17:
+                _context3.next = 23;
+                break;
+
+              case 19:
+                _context3.prev = 19;
+                _context3.t0 = _context3["catch"](2);
+                _didIteratorError2 = true;
+                _iteratorError2 = _context3.t0;
+
+              case 23:
+                _context3.prev = 23;
+                _context3.prev = 24;
+
+                if (!(!_iteratorNormalCompletion2 && _iterator2.return != null)) {
+                  _context3.next = 28;
+                  break;
+                }
+
+                _context3.next = 28;
+                return _iterator2.return();
+
+              case 28:
+                _context3.prev = 28;
+
+                if (!_didIteratorError2) {
+                  _context3.next = 31;
+                  break;
+                }
+
+                throw _iteratorError2;
+
+              case 31:
+                return _context3.finish(28);
+
+              case 32:
+                return _context3.finish(23);
+
+              case 33:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this, [[2, 19, 23, 33], [24,, 28, 32]]);
+      }));
+
+      function each(_x) {
+        return _each.apply(this, arguments);
+      }
+
+      return each;
+    }(),
     next: function next() {
-      if (SOUL.pipeOrForked && !arguments[0] || SOUL.pipeOrForked && arguments[0] !== SOUL) return Promise.reject(new RecipienceError('Cannot redirect flow from the plumbing, Create a fork instead.', _t.meta));
+      // if redirected
+      if (pipes.length) return Promise.reject(new RecipienceError('Cannot redirect flow from the plumbing, Create a fork instead.', _t.meta));
       this.__started = true;
       if (cache.length) return Promise.resolve({
         value: cache.shift(),
