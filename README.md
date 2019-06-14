@@ -334,11 +334,11 @@ You should NOT listen to data events on the original stream if you decided to fo
 
 In the event that it should happen, an Error will be thrown:
 ```
-RecipienceError: Redirecting flow from the plumbing is not recommended. Create a fork instead.
+RecipienceError: Cannot redirect flow from the plumbing, Create a fork instead.
 ```
 But, the stream will continue flowing.
 
-You can
+
 
 
 #### recipience.stream.start
