@@ -270,6 +270,6 @@ const Recipience = function( opt ){
 }
 
 Recipience.RecipienceError = RecipienceError;
-Recipience.CustomError = createCustomError;
+Recipience.createCustomError = createCustomError;
 
 module.exports = exports = Recipience
