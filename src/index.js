@@ -2,13 +2,11 @@ require("@babel/polyfill");
 
 // This will make sense later
 const createCustomError = (props) => class RecipienceError extends Error {
-   constructor (message, meta) {
+   constructor (message) {
       super (message)
       this.constructor = RecipienceError
       this.__proto__   = RecipienceError.prototype
       this.message     = message
-
-      this.meta = meta;
 
       props.constructor === Object &&
       Object.entries(props).forEach((key, value) => {
@@ -30,12 +28,13 @@ const createCustomError = (props) => class RecipienceError extends Error {
 
 // This will also, make sense later
 const RecipienceError = class RecipienceError extends Error {
-   constructor (message) {
+   constructor (message, meta) {
       super (message)
       this.constructor = RecipienceError
       this.__proto__   = RecipienceError.prototype
       this.message     = message
       this.name        = 'RecipienceError'
+      this.meta = meta
     }
 }
 

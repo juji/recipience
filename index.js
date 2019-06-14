@@ -41,7 +41,7 @@ var createCustomError = function createCustomError(props) {
     function (_Error) {
       _inherits(RecipienceError, _Error);
 
-      function RecipienceError(message, meta) {
+      function RecipienceError(message) {
         var _this;
 
         _classCallCheck(this, RecipienceError);
@@ -50,7 +50,6 @@ var createCustomError = function createCustomError(props) {
         _this.constructor = RecipienceError;
         _this.__proto__ = RecipienceError.prototype;
         _this.message = message;
-        _this.meta = meta;
         props.constructor === Object && Object.entries(props).forEach(function (key, value) {
           key === 'constructor' && key === '__proto__' && key === 'message' || (_this[key] = value);
         });
@@ -68,7 +67,7 @@ var RecipienceError =
 function (_Error2) {
   _inherits(RecipienceError, _Error2);
 
-  function RecipienceError(message) {
+  function RecipienceError(message, meta) {
     var _this2;
 
     _classCallCheck(this, RecipienceError);
@@ -78,6 +77,7 @@ function (_Error2) {
     _this2.__proto__ = RecipienceError.prototype;
     _this2.message = message;
     _this2.name = 'RecipienceError';
+    _this2.meta = meta;
     return _this2;
   }
 
