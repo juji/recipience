@@ -32,7 +32,9 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 
 function _asyncIterator(iterable) { var method; if (typeof Symbol !== "undefined") { if (Symbol.asyncIterator) { method = iterable[Symbol.asyncIterator]; if (method != null) return method.call(iterable); } if (Symbol.iterator) { method = iterable[Symbol.iterator]; if (method != null) return method.call(iterable); } } throw new TypeError("Object is not async iterable"); }
 
-require("@babel/polyfill"); // This will make sense later
+require("core-js/stable");
+
+require("regenerator-runtime/runtime"); // This will make sense later
 
 
 var createCustomError = function createCustomError(props) {

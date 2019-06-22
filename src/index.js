@@ -1,4 +1,5 @@
-require("@babel/polyfill");
+require("core-js/stable");
+require("regenerator-runtime/runtime");
 
 // This will make sense later
 const createCustomError = (props) => class RecipienceError extends Error {
